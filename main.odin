@@ -50,9 +50,10 @@ main :: proc() {
 	}
 
 	for !WindowShouldClose() {
+		// User input (human player turn)
 		if IsMouseButtonPressed(.LEFT) && game.turn == .HUMAN {
-			block := board_get_block(game.blocks[:], GetMousePosition())
-			if block != nil {
+			block, ok := board_get_block(game.blocks[:], GetMousePosition())
+			if ok {
 				if game.selected_block != nil {
 					// Selection state
 					if game.selected_block.pos != block.pos && !block_is_active(block) {
@@ -65,9 +66,10 @@ main :: proc() {
 					game.selected_block = nil
 				} else {
 					if block.player == .HUMAN && block_is_active(block) {
+						// Go to selection state
 						game.selected_block = block
 					} else {
-						if block.color.a == 0 {
+						if !block_is_active(block) {
 							block.color = HUMAN_COLOR
 							block.player = game.turn
 							game.turn = .AI
@@ -85,7 +87,8 @@ main :: proc() {
 		// Draw
 		BeginDrawing()
 		{
-			DrawTexture(board_texture, 0, 0, gfx.texture_rgb_tint_color() when WITH_RGB_BOARD else DARKGRAY)
+			tint := gfx.texture_rgb_tint_color() when WITH_RGB_BOARD else DARKGRAY
+			DrawTexture(board_texture, 0, 0, tint)
 
 			for b in game.blocks {
 				DrawCircleV(block_center_pos(b.pos), CIRCLE_RADIUS, b.color)
@@ -102,7 +105,7 @@ main :: proc() {
 				}
 			}
 
-			DrawFPS(10, 10)
+			DrawFPS(5, 5)
 		}
 		EndDrawing()
 	}

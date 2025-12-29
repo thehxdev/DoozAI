@@ -42,15 +42,15 @@ snap_pos_to_grid :: #force_inline proc(pos: raylib.Vector2) -> raylib.Vector2 {
 	return pos - v
 }
 
-board_get_block :: proc(blocks: []Block, pos: raylib.Vector2) -> ^Block {
+board_get_block :: proc(blocks: []Block, pos: raylib.Vector2) -> (^Block, bool) {
 	normalized_pos := snap_pos_to_grid(pos)
 	for i in 0..<len(blocks) {
 		b := &blocks[i]
 		if b.pos == normalized_pos {
-			return b
+			return b, true
 		}
 	}
-	return nil
+	return nil, false
 }
 
 block_toggle :: #force_inline proc(block: ^Block) {
