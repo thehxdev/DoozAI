@@ -17,11 +17,16 @@ let
     ];
 in
     mkShell {
-        packages = (with pkgs; [
+        nativeBuildInputs = with pkgs; [
             llvmPackages.clang
             gnumake
+        ];
+
+        buildInputs = dependencyLibraries;
+
+        packages = with pkgs; [
             gdb
-        ]) ++ dependencyLibraries;
+        ];
 
         shellHook = ''
         export CC=clang
