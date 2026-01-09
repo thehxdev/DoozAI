@@ -52,8 +52,8 @@ main :: proc() {
 	for !WindowShouldClose() {
 		// User input (human player turn)
 		if IsMouseButtonPressed(.LEFT) && game.turn == .HUMAN {
-			block, ok := board_get_block(game.blocks[:], GetMousePosition())
-			if ok {
+			block, found := board_get_block(game.blocks[:], GetMousePosition())
+			if found {
 				if game.selected_block != nil {
 					// Selection state
 					if game.selected_block.pos != block.pos && !block_is_active(block) {
@@ -119,13 +119,11 @@ ai_routine :: proc() {
 	for {
 		sync.cond_wait(&human_played, &mu)
 
-		for game.blocks[c].color.a != 0 { c += 1 }
+		for game.blocks[c].color.a != 0 { c = (c + 1) %% 24 }
 
 		game.blocks[c].color = AI_COLOR
 		game.blocks[c].player = game.turn
 		game.turn = .HUMAN
-
-		c = (c + 1) %% 24
 	}
 }
 
