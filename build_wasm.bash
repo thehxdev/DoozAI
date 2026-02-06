@@ -7,14 +7,14 @@ if ! command -v emcc >/dev/null; then
 fi
 
 SELF_PATH=$(realpath "$(dirname "$0")")
-DOOZ_RAYLIB_WASM="$SELF_PATH/raylib-wasm"
+DOOZ_RAYLIB_WASM="${DOOZ_RAYLIB_WASM:-$SELF_PATH/raylib-wasm}"
 
 emcc -O2 -Wall \
     -I. -I"$DOOZ_RAYLIB_WASM/include" \
     -L. -L"$DOOZ_RAYLIB_WASM/lib" \
     -s USE_GLFW=3 -s ASYNCIFY -DPLATFORM_WEB \
     --shell-file "$SELF_PATH/wasm/minshell.html" \
-    --embed-file "$SELF_PATH/assets/board.png" \
-    -o "$SELF_PATH/game.html" \
+    --preload-file "$SELF_PATH/assets/board.png"@"./assets/board.png" \
+    -o "$SELF_PATH/game-wasm.html" \
     "$SELF_PATH/src/build.c" \
     "$DOOZ_RAYLIB_WASM/lib/libraylib.a"
