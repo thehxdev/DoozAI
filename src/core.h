@@ -1,13 +1,15 @@
 #ifndef _DOOZ_CORE_H_
 #define _DOOZ_CORE_H_
 
+#define ARRAY_LEN(a)    (sizeof(a) / sizeof(a[0]))
+
 #define PLAYER_PIECES_MAX 12
 
 #define BOARD_BLOCK_WIDTH       140
 #define BOARD_ROW_BLOCK_COUNT   7
 #define BOARD_BLOCKS_COUNT      24
 
-#define PIECE_RADIUS                BOARD_BLOCK_WIDTH/4 
+#define PIECE_RADIUS                BOARD_BLOCK_WIDTH/4
 #define PIECE_SELECTION_RADIUS      PIECE_RADIUS + 15
 #define PIECE_SELECTION_THICKNESS   10
 

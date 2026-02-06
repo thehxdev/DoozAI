@@ -6,8 +6,8 @@
 #include <getopt.h>
 #include <limits.h>
 
-#define STH_STRIP_PREFIX
-#include <sth/sth.c>
+#define STB_DS_IMPLEMENTATION
+#include "stb_ds.h"
 
 #include <raylib.h>
 #include <raymath.h>

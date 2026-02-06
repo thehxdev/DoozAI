@@ -17,7 +17,7 @@ void gfx_unload_background_texture(void) {
 void gfx_board_draw(board_t board, Color texture_tint) {
     DrawTexture(background_texture, 0, 0, texture_tint);
     Vector2 pos;
-    for (int i = 0; i < STH_BASE_ARRAY_LEN(BLOCKS_POS); i++) {
+    for (int i = 0; i < ARRAY_LEN(BLOCKS_POS); i++) {
         if (board[i] == EMPTY)
             continue;
         pos = BLOCKS_POS[i];

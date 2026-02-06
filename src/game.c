@@ -64,10 +64,10 @@ bool board_move_caused_mill(const board_t board, player_t player, block_index_t 
 int board_count_mills(const board_t board, player_t player) {
     int count = 0;
     block_index_t mill[3];
-    for (int i = 0; i < STH_BASE_ARRAY_LEN(MILLS); i++) {
+    for (int i = 0; i < ARRAY_LEN(MILLS); i++) {
         bool is_mill = true;
         memcpy(mill, MILLS[i], sizeof(mill));
-        for (int j = 0; j < STH_BASE_ARRAY_LEN(mill); j++) {
+        for (int j = 0; j < ARRAY_LEN(mill); j++) {
             if (board[mill[j]] != player)
                 is_mill = false;
         }
@@ -171,7 +171,7 @@ Vector2 board_pos_snap_to_grid(Vector2 pos) {
 
 block_index_t board_find_block_by_pos(board_t board, Vector2 pos) {
     Vector2 snapped_pos = board_pos_snap_to_grid(pos);
-    for (int i = 0; i < STH_BASE_ARRAY_LEN(BLOCKS_POS); i++) {
+    for (int i = 0; i < ARRAY_LEN(BLOCKS_POS); i++) {
         if (Vector2Equals(BLOCKS_POS[i], snapped_pos))
             return i;
     }
