@@ -40,10 +40,7 @@ int main(int argc, char *argv[]) {
         EndDrawing();
 
         if (game.turn == AI) {
-            game_state_t g = game;
             game = ai_best_next_state(game, MINIMAX_DEPTH_MAX);
-            game.can_remove = g.can_remove;
-            game.selected_block = g.selected_block;
             game.turn = HUMAN;
         }
     }
