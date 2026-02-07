@@ -1,6 +1,8 @@
 #ifndef _DOOZ_CORE_H_
 #define _DOOZ_CORE_H_
 
+#define ADD_REMOVED_PIECE_BACK 0
+
 #define ARRAY_LEN(a)    (sizeof(a) / sizeof(a[0]))
 
 #define PLAYER_PIECES_MAX 12

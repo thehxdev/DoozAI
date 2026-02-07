@@ -99,7 +99,9 @@ bool game_remove_do(game_state_t *game, block_index_t idx) {
     player_t opponent = (game->turn == HUMAN) ? AI : HUMAN;
     if (game->board[idx] == opponent) {
         game->board[idx] = EMPTY;
+#if ADD_REMOVED_PIECE_BACK == 1
         game->player_pieces_count[opponent]++;
+#endif
         return true;
     }
     return false;
@@ -115,16 +117,13 @@ game_state_t *game_move_gen_next_states(game_state_t game, move_t move, player_t
             if (game.board[i] == opponent) {
                 game_state_t state_after_remove = game;
                 game_remove_do(&state_after_remove, i);
-                // state_after_remove.turn = opponent;
                 arrpush(new_states, state_after_remove);
             }
         }
         if (new_states == NULL) {
-            // game.turn = opponent;
             arrpush(new_states, game);
         }
     } else {
-        // game.turn = opponent;
         arrpush(new_states, game);
     }
 
@@ -152,7 +151,7 @@ move_t *game_gen_valid_moves(board_t board, player_t player, int player_pieces_c
     for (i = 0; i < BOARD_BLOCKS_COUNT; i++) {
         if (board[i] == player) {
             for (j = 0; j < BOARD_BLOCKS_COUNT; j++) {
-                if (board[j] == player)
+                if (board[j] == EMPTY)
                     arrpush(moves, ((move_t){ .type = FLY, .from = i, .to = j }));
             }
         }
