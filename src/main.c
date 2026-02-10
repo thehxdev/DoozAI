@@ -9,17 +9,17 @@ static game_state_t game;
 
 int main(int argc, char *argv[]) {
     int ret = EXIT_FAILURE;
-    if (!parse_cli_args(argc, argv)) {
-        usage(argv[0]);
-        goto ret;
-    }
+    if (argc == 2)
+        background_image_path = argv[1];
 
     SetConfigFlags(FLAG_MSAA_4X_HINT);
     SetTraceLogLevel(LOG_WARNING);
     InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Dooz AI!");
     SetTargetFPS(TARGET_FPS);
-    if (!gfx_load_background_texture(background_image_path))
+    if (!gfx_load_background_texture(background_image_path)) {
+        usage(argv[0]);
         goto ret_close_window;
+    }
 
     memset(&game, 0, sizeof(game));
     game_init(&game);
@@ -95,35 +95,6 @@ static bool handle_human_turn(void) {
     return false;
 }
 
-static int parse_cli_args(int argc, char *argv[]) {
-    int opt;
-    opterr = 0;
-
-    while ((opt = getopt(argc, argv, ":b:h")) != EOF) {
-        switch (opt) {
-            case 'b':
-                background_image_path = strdup(optarg);
-                break;
-
-            case 'h':
-                return false;
-
-            case ':':
-                fprintf(stderr, "-%c: missing argument\n", optopt);
-                return false;
-
-            case '?':
-                fprintf(stderr, "-%c: invalid option\n", optopt);
-                return false;
-
-            default:
-                return false;
-        }
-    }
-
-    return true;
-}
-
 static void usage(const char *prog_name) {
-    fprintf(stderr, "Usage: %s [-b <assets directory path>]\n", prog_name);
+    fprintf(stderr, "Usage: %s [background image path]\n", prog_name);
 }
