@@ -1,3 +1,5 @@
+#include "core.h"
+
 const Vector2 BLOCK_HALF = { BOARD_BLOCK_WIDTH/2, BOARD_BLOCK_WIDTH/2 };
 
 const Vector2 BLOCKS_POS[BOARD_BLOCKS_COUNT] = {
