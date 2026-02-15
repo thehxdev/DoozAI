@@ -1,4 +1,19 @@
-const block_index_t MILLS[][3] = {
+#include <stdbool.h>
+#include <stdint.h>
+#include "core.h"
+
+#ifdef DOOZ_ARCH_EXT_SSE4_1
+    #include <emmintrin.h>
+    #include <smmintrin.h>
+#endif
+
+#include <raylib.h>
+
+#include "core.h"
+#include "game.h"
+#include "stb_ds.h"
+
+static const block_index_t MILLS[][3] = {
     // Outer Ring
     {0, 1, 2}, {2, 3, 4}, {4, 5, 6}, {6, 7, 0},
     // Middle Ring
@@ -11,7 +26,7 @@ const block_index_t MILLS[][3] = {
     {0, 8, 16}, {2, 10, 18}, {4, 12, 20}, {6, 14, 22}
 };
 
-const block_index_t IDX_TO_MILL_MAP[24][3][2] = {
+static const block_index_t IDX_TO_MILL_MAP[24][3][2] = {
     [0]  = { {  1, 2 },  {  8, 16 }, {  7,  6 } },
     [1]  = { {  0, 2 },  {  9, 17 } },
     [2]  = { {  0, 1 },  {  3,  4 }, { 10, 18 } },
@@ -38,23 +53,20 @@ const block_index_t IDX_TO_MILL_MAP[24][3][2] = {
     [23] = { { 15,  7 }, { 16, 22 } },
 };
 
-void game_init(game_state_t *game) {
-    game->player_pieces_count[HUMAN] = PLAYER_PIECES_MAX;
-    game->player_pieces_count[AI] = PLAYER_PIECES_MAX;
-    game->turn = HUMAN;
-    game->selected_block = -1;
-    game->can_remove = false;
-}
-
 bool board_move_caused_mill(const board_t board, player_t player, block_index_t idx) {
-    block_index_t mills[3][2];
-    memcpy(mills, IDX_TO_MILL_MAP[idx], sizeof(mills));
+    block_index_t mills[4][2];
 
     const int mills_count = ((idx & 1) == 0) ? 3 : 2;
-    for (int i = 0; i < mills_count; i++) {
-        block_index_t mill[2];
-        memcpy(mill, mills[i], sizeof(mill));
-        if (board[mill[0]] == player && board[mill[1]] == player)
+    *(uint64_t*)mills = *(uint64_t*)&IDX_TO_MILL_MAP[idx];
+
+    if (board[mills[0][0]] == player && board[mills[0][1]] == player)
+        return true;
+
+    if (board[mills[1][0]] == player && board[mills[1][1]] == player)
+        return true;
+
+    if ((idx & 1) == 0) {
+        if (board[mills[2][0]] == player && board[mills[2][1]] == player)
             return true;
     }
 
@@ -63,16 +75,16 @@ bool board_move_caused_mill(const board_t board, player_t player, block_index_t 
 
 int board_count_mills(const board_t board, player_t player) {
     int count = 0;
-    block_index_t mill[3];
     for (int i = 0; i < ARRAY_LEN(MILLS); i++) {
-        bool is_mill = true;
-        memcpy(mill, MILLS[i], sizeof(mill));
-        for (int j = 0; j < ARRAY_LEN(mill); j++) {
-            if (board[mill[j]] != player)
-                is_mill = false;
-        }
-        if (is_mill)
+#ifdef DOOZ_ARCH_EXT_SSE4_1
+        __m128i b = _mm_set_epi32(MILLS[i][0], MILLS[i][1], MILLS[i][2], 0);
+        __m128i p = _mm_set_epi32(player, player, player, 0);
+        if (_mm_test_all_ones(_mm_cmpeq_epi32(b, p)))
             count++;
+#else
+        if (MILLS[i][0] == player && MILLS[i][1] == player && MILLS[i][2] == player)
+            count++;
+#endif
     }
     return count;
 }
@@ -109,6 +121,7 @@ bool game_remove_do(game_state_t *game, block_index_t idx) {
 
 game_state_t *game_move_gen_next_states(game_state_t game, move_t move, player_t player) {
     game_state_t *new_states = NULL;
+    arrsetcap(new_states, 32);
     player_t opponent = (player == HUMAN) ? AI : HUMAN;
 
     bool caused_mill = game_move_do(&game, move);
@@ -140,6 +153,7 @@ bool game_is_over(board_t board) {
 move_t *game_gen_valid_moves(board_t board, player_t player, int player_pieces_count) {
     int i, j;
     move_t *moves = NULL;
+    arrsetcap(moves, 32);
 
     if (player_pieces_count > 0) {
         for (i = 0; i < BOARD_BLOCKS_COUNT; i++) {
@@ -165,13 +179,13 @@ Vector2 board_pos_snap_to_grid(Vector2 pos) {
 		(float)((int)pos.x % BOARD_BLOCK_WIDTH),
 		(float)((int)pos.y % BOARD_BLOCK_WIDTH),
 	};
-	return Vector2Subtract(pos, v);
+	return (Vector2){ pos.x - v.x, pos.y - v.y };
 }
 
 block_index_t board_find_block_by_pos(board_t board, Vector2 pos) {
     Vector2 snapped_pos = board_pos_snap_to_grid(pos);
     for (int i = 0; i < ARRAY_LEN(BLOCKS_POS); i++) {
-        if (Vector2Equals(BLOCKS_POS[i], snapped_pos))
+        if (BLOCKS_POS[i].x == snapped_pos.x && BLOCKS_POS[i].y == snapped_pos.y)
             return i;
     }
     return -1;

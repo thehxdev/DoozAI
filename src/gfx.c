@@ -1,3 +1,8 @@
+#include <raylib.h>
+#include <raymath.h>
+#include "core.h"
+#include "game.h"
+
 static Texture background_texture;
 
 bool gfx_load_background_texture(const char *image_path) {

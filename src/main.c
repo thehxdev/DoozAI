@@ -1,32 +1,52 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
+
+#include <raylib.h>
+#include <raymath.h>
+
+#include "game.h"
+#include "gfx.h"
+#include "ai.h"
+
 #define MINIMAX_DEPTH_MAX   4
 
 static void usage(const char *prog_name);
 static int parse_cli_args(int argc, char *argv[]);
 static bool handle_human_turn(void);
 
-static char *background_image_path = "./assets/board.png";
+static char self_path[4096];
+static char background_image_path[4096];
 static game_state_t game;
 
 int main(int argc, char *argv[]) {
     int ret = EXIT_FAILURE;
-    if (argc == 2)
-        background_image_path = argv[1];
+
+    strncpy(self_path, GetApplicationDirectory(), sizeof(self_path));
+    snprintf(background_image_path, sizeof(background_image_path), "%s/board.png", self_path);
 
     SetConfigFlags(FLAG_MSAA_4X_HINT);
     SetTraceLogLevel(LOG_WARNING);
     InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Dooz AI!");
     SetTargetFPS(TARGET_FPS);
     if (!gfx_load_background_texture(background_image_path)) {
-        usage(argv[0]);
         goto ret_close_window;
     }
 
-    memset(&game, 0, sizeof(game));
-    game_init(&game);
+    memset(&game.board, 0, sizeof(game.board));
+    {
+        game.player_pieces_count[HUMAN] = PLAYER_PIECES_MAX;
+        game.player_pieces_count[AI] = PLAYER_PIECES_MAX;
+        game.turn = HUMAN;
+        game.selected_block = -1;
+        game.can_remove = false;
+    }
 
     while (!WindowShouldClose()) {
-        if (handle_human_turn())
+        if (game.turn == HUMAN && IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && handle_human_turn()) {
             game.turn = AI;
+        }
 
         BeginDrawing();
         {
@@ -54,47 +74,42 @@ ret:
 }
 
 static bool handle_human_turn(void) {
-    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && game.turn == HUMAN) {
-        block_index_t block_index = board_find_block_by_pos(game.board, GetMousePosition());
-        if (block_index == -1)
+    block_index_t block_index = board_find_block_by_pos(game.board, GetMousePosition());
+    if (block_index == -1)
+        return false;
+
+    if (game.can_remove) {
+        if (game.board[block_index] != AI)
             return false;
-
-        if (game.can_remove) {
-            if (game.board[block_index] != AI)
-                return false;
-            game_remove_do(&game, block_index);
-            game.can_remove = false;
-            return true;
-        }
-
-        if (game.board[block_index] == HUMAN) {
-            game.selected_block = (game.selected_block == -1) ? block_index : -1;
-            return false;
-        } else if (game.board[block_index] == EMPTY) {
-            move_t move = { 0 };
-
-            if (game.selected_block != -1) {
-                move.type = FLY;
-                move.from = game.selected_block;
-                move.to = block_index;
-                game.selected_block = -1;
-            } else {
-                move.type = PLACE;
-                move.to = block_index;
-            }
-
-            bool caused_mill = game_move_do(&game, move);
-            if (caused_mill) {
-                game.can_remove = true;
-                return false;
-            }
-
-            return true;
-        }
+        game_remove_do(&game, block_index);
+        game.can_remove = false;
+        return true;
     }
-    return false;
-}
 
-static void usage(const char *prog_name) {
-    fprintf(stderr, "Usage: %s [background image path]\n", prog_name);
+    if (game.board[block_index] == HUMAN) {
+        game.selected_block = (game.selected_block == -1) ? block_index : -1;
+        return false;
+    } else if (game.board[block_index] == EMPTY) {
+        move_t move;
+
+        if (game.selected_block != -1) {
+            move.type = FLY;
+            move.from = game.selected_block;
+            move.to = block_index;
+            game.selected_block = -1;
+        } else {
+            move.type = PLACE;
+            move.to = block_index;
+        }
+
+        bool caused_mill = game_move_do(&game, move);
+        if (caused_mill) {
+            game.can_remove = true;
+            return false;
+        }
+
+        return true;
+    }
+
+    return false;
 }

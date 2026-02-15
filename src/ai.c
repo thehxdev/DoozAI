@@ -8,27 +8,17 @@
  * AI has completed it's turn.
  */
 
+ #include <limits.h>
+ #include "ai.h"
+ #include "stb_ds.h"
+
 int ai_evaluate(game_state_t game) {
     int human_mills = board_count_mills(game.board, HUMAN);
     int ai_mills = board_count_mills(game.board, AI);
 
-    int human_pieces = 0, ai_pieces = 0;
-    for (int i = 0; i < BOARD_BLOCKS_COUNT; i++) {
-        switch (game.board[i]) {
-            case HUMAN:
-                human_pieces++;
-                break;
-
-            case AI:
-                ai_pieces++;
-                break;
-
-            default:
-                break;
-        }
-    }
-
-    return ((ai_mills - human_mills) * 10) + ((ai_pieces - human_pieces) * 3);
+    int human_pieces = PLAYER_PIECES_MAX - game.player_pieces_count[HUMAN];
+    int ai_pieces = PLAYER_PIECES_MAX - game.player_pieces_count[AI];
+    return ((ai_mills - human_mills) * 16) + ((ai_pieces - human_pieces) * 4);
 }
 
 int ai_minimax(game_state_t game, int depth, int alpha, int beta, bool maximizing) {
@@ -98,6 +88,39 @@ int ai_minimax(game_state_t game, int depth, int alpha, int beta, bool maximizin
     }
 }
 
+game_state_t ai_best_next_state(game_state_t game, int depth) {
+    game_state_t best_state = game;
+    move_t *moves = game_gen_valid_moves(game.board, AI, game.player_pieces_count[AI]);
+    if (moves == NULL)
+        goto ret;
+
+    int best_score = INT_MIN;
+    int moves_len = arrlen(moves);
+
+    for (int i = 0; i < moves_len; i++) {
+        int branch_best_score = INT_MIN;
+        game_state_t *next_states = game_move_gen_next_states(game, moves[i], AI);
+        if (next_states == NULL)
+            continue;
+
+        int next_states_len = arrlen(next_states);
+        for (int j = 0; j < next_states_len; j++) {
+            int branch_score = ai_minimax(next_states[j], depth-1, INT_MIN, INT_MAX, false);
+            branch_best_score = MAX(branch_best_score, branch_score);
+            if (branch_best_score > best_score) {
+                best_score = branch_best_score;
+                best_state = next_states[j];
+            }
+        }
+
+        arrfree(next_states);
+    }
+
+    arrfree(moves);
+ret:
+    return best_state;
+}
+
 #if 0
 move_t ai_best_move(game_state_t game, int depth) {
     move_t *moves = game_gen_valid_moves(game.board, AI, game.player_pieces_count[AI]);
@@ -131,36 +154,3 @@ move_t ai_best_move(game_state_t game, int depth) {
     return best_move;
 }
 #endif // ai_best_move
-
-game_state_t ai_best_next_state(game_state_t game, int depth) {
-    game_state_t best_state = game;
-    move_t *moves = game_gen_valid_moves(game.board, AI, game.player_pieces_count[AI]);
-    if (moves == NULL)
-        goto ret;
-
-    int best_score = INT_MIN;
-    int moves_len = arrlen(moves);
-
-    for (int i = 0; i < moves_len; i++) {
-        int branch_best_score = INT_MIN;
-        game_state_t *next_states = game_move_gen_next_states(game, moves[i], AI);
-        if (next_states == NULL)
-            continue;
-
-        int next_states_len = arrlen(next_states);
-        for (int j = 0; j < next_states_len; j++) {
-            int branch_score = ai_minimax(next_states[j], depth-1, INT_MIN, INT_MAX, false);
-            branch_best_score = MAX(branch_best_score, branch_score);
-            if (branch_best_score > best_score) {
-                best_score = branch_best_score;
-                best_state = next_states[j];
-            }
-        }
-
-        arrfree(next_states);
-    }
-
-    arrfree(moves);
-ret:
-    return best_state;
-}
