@@ -1,0 +1,13 @@
+* text=auto
+
+LICENSE     text
+*.html      text
+*.md        text
+*.c         text
+*.h         text
+*.cmake     text
+*.txt       text
+*.bash      text eol=lf
+*.nix       text eol=lf
+
+*.png   binary
